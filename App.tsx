@@ -1,49 +1,83 @@
-import React, {useState, useEffect} from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  Alert,
-  ScrollView,
-  Keyboard,
-} from 'react-native';
+import React, {useState, useEffect, FC} from 'react';
+import {View, Text, TextInput, Alert, ScrollView} from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
 import SwapFrom from './images/SwapFrom.svg';
-import GBPIcon from './images/GBP.svg';
-import {currencyIcons} from './src/CurrencyIcons';
+import IconComponent from "./src/IconComponent"
 import {getExchangeRates} from './api';
+import SplashScreenComponent from './src/SplashScreenComponent';
+import {styles} from './src/styles';
+
+interface Currency {
+  code: string;
+  name: string;
+  rate: number;
+  symbol: string;
+}
+
+type ExchangeRates = Currency[];
 
 const App = () => {
-  const [fromValue, setFromValue] = useState({
+  const [fromValue, setFromValue] = useState<Currency>({
     code: 'GBP',
     name: 'British Pound',
     rate: 0.8575239,
     symbol: '£',
   });
-  const [toValue, setToValue] = useState({
+  const [toValue, setToValue] = useState<Currency>({
     code: 'EUR',
     name: 'Euro',
     rate: 1.1661482,
     symbol: '€',
   });
-  const [amountFrom, setAmountFrom] = useState('');
-  const [amountTo, setAmountTo] = useState('');
-  const [exchangeRate, setExchangeRate] = useState(null);
-  const [exchangeRates, setExchangeRates] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [amountFrom, setAmountFrom] = useState<string>('');
+  const [amountTo, setAmountTo] = useState<string>('');
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRates>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    // const fetchData = async () => {
+    //   try {
+    //     const data = await getExchangeRates('aud');
+    //     const arrayOfCurrencies: Currency[] = Object.keys(data).map(key => ({
+    //       code: key,
+    //       name: data[key].name,
+    //       rate: data[key].rate,
+    //       symbol: data[key].symbol,
+    //     }));
+    //     setExchangeRates(arrayOfCurrencies);
+    //   } catch (error) {
+    //     if (error instanceof Error) {
+    //       setError(error); // `error` is of type `Error`
+    //     } else {
+    //       setError(new Error('An unknown error occurred')); // Default error message
+    //     }
+    //   } finally {
+    //     setLoading(false);
+    //   }
+    // };
+
     const fetchData = async () => {
       try {
-        const data = await getExchangeRates('aud');
-        const arrayOfCurrencies = Object.keys(data).map(key => {
-          return {code: key, ...data[key]};
+        const dataPromise = getExchangeRates('gbp');
+        const timeoutPromise = new Promise(resolve =>
+          setTimeout(resolve, 3000),
+        );
+
+        const data = await Promise.all([dataPromise, timeoutPromise]);
+        const exchangeRatesData = data[0];
+
+        const arrayOfCurrencies: Currency[] = Object.keys(exchangeRatesData).map(key => {
+          return {code: key, ...exchangeRatesData[key]};
         });
         setExchangeRates(arrayOfCurrencies);
       } catch (error) {
-        setError(error);
+        if (error instanceof Error) {
+          setError(error);
+        } else {
+          setError(new Error('An unknown error occurred'));
+        }
       } finally {
         setLoading(false);
       }
@@ -58,7 +92,7 @@ const App = () => {
     }
   }, [fromValue, toValue]);
 
-  const fetchExchangeRate = async (from, to) => {
+  const fetchExchangeRate = async (from: string, to: string) => {
     try {
       const data = await getExchangeRates(from);
       setExchangeRate(data[to].rate);
@@ -68,36 +102,35 @@ const App = () => {
     }
   };
 
-  const handleFromAmountChange = amount => {
-    if (!isNaN(amount)) {
+  const handleFromAmountChange = (amount: string) => {
+    if (!isNaN(Number(amount))) {
       setAmountFrom(amount);
       updateToAmount(amount, exchangeRate);
     }
   };
 
-  const handleToAmountChange = amount => {
-    if (!isNaN(amount)) {
+  const handleToAmountChange = (amount: string) => {
+    if (!isNaN(Number(amount))) {
       setAmountTo(amount);
       updateFromAmount(amount, exchangeRate);
     }
   };
 
-  const updateToAmount = (amount, rate) => {
-    const converted = amount * rate;
-    setAmountTo(converted.toFixed(toValue.code === 'JPY' ? 0 : 2));
+  const updateToAmount = (amount: string, rate: number | null) => {
+    if (rate !== null) {
+      const converted = Number(amount) * rate;
+      setAmountTo(converted.toFixed(toValue.code === 'JPY' ? 0 : 2));
+    }
   };
 
-  const updateFromAmount = (amount, rate) => {
-    const converted = amount / rate;
-    setAmountFrom(converted.toFixed(fromValue.code === 'JPY' ? 0 : 2));
+  const updateFromAmount = (amount: string, rate: number | null) => {
+    if (rate !== null) {
+      const converted = Number(amount) / rate;
+      setAmountFrom(converted.toFixed(fromValue.code === 'JPY' ? 0 : 2));
+    }
   };
 
-  const IconComponent = ({code, style}) => {
-    const Component = currencyIcons[code] || GBPIcon;
-    return <Component style={style} />;
-  };
-
-  const DropdownItem = item => {
+  const DropdownItem = (item: {code: string}) => {
     return (
       <View style={styles.dropdownItem}>
         <IconComponent code={item?.code} style={styles.iconStyle} />
@@ -106,7 +139,7 @@ const App = () => {
     );
   };
 
-  const handleFromCurrencyChange = item => {
+  const handleFromCurrencyChange = (item: Currency) => {
     if (item.code === toValue.code) {
       Alert.alert(
         'Invalid Selection',
@@ -117,7 +150,7 @@ const App = () => {
     }
   };
 
-  const handleToCurrencyChange = item => {
+  const handleToCurrencyChange = (item: Currency) => {
     if (item.code === fromValue.code) {
       Alert.alert(
         'Invalid Selection',
@@ -127,6 +160,10 @@ const App = () => {
       setToValue(item);
     }
   };
+
+  if (loading) {
+    return <SplashScreenComponent />;
+  }
 
   return (
     <ScrollView
@@ -156,6 +193,9 @@ const App = () => {
                 <IconComponent code={fromValue.code} style={styles.iconStyle} />
               )}
               renderItem={DropdownItem}
+              onChange={function (item: Currency): void {
+                throw new Error('Function not implemented.');
+              }}
             />
           )}
           <TextInput
@@ -167,8 +207,9 @@ const App = () => {
           />
           <Text style={[styles.title, styles.equals]}>to</Text>
           <Text style={styles.conversionText}>
-            {fromValue.code} {fromValue.symbol}1.00 = {toValue.symbol}
-            {(1 / exchangeRate).toFixed(toValue.code === 'JPY' ? 0 : 4)}
+            {fromValue.code} {fromValue.symbol}1.00 = {toValue.code}{' '}
+            {toValue.symbol}
+            {(1 / exchangeRate!).toFixed(toValue.code === 'JPY' ? 0 : 4)}
           </Text>
           {exchangeRates.length > 0 && (
             <Dropdown
@@ -188,6 +229,9 @@ const App = () => {
                 <IconComponent code={toValue.code} style={styles.iconStyle} />
               )}
               renderItem={DropdownItem}
+              onChange={function (item: Currency): void {
+                throw new Error('Function not implemented.');
+              }}
             />
           )}
           <TextInput
@@ -202,67 +246,5 @@ const App = () => {
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: 'white',
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '500',
-  },
-  converterContainer: {
-    padding: 20,
-    width: '100%',
-  },
-  dropdown: {
-    height: 50,
-    borderColor: 'black',
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 12,
-  },
-  placeholderStyle: {
-    fontSize: 16,
-    paddingLeft: 10,
-  },
-  selectedTextStyle: {
-    fontSize: 16,
-    paddingLeft: 10,
-  },
-  iconStyle: {
-    width: 20,
-    height: 20,
-  },
-  input: {
-    height: 50,
-    borderColor: 'black',
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 12,
-    marginVertical: 30,
-  },
-  equals: {
-    alignSelf: 'center',
-  },
-  conversionText: {
-    alignSelf: 'center',
-    margin: 15,
-    fontSize: 12,
-  },
-  dropdownItem: {
-    flexDirection: 'row',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-  },
-  dropdownTextItem: {
-    fontSize: 16,
-    paddingLeft: 10,
-  },
-});
 
 export default App;
