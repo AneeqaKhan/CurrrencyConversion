@@ -35,13 +35,20 @@ export const styles = StyleSheet.create({
     width: 20,
     height: 20,
   },
-  input: {
+  inputContainer: {
     height: 50,
     borderColor: 'black',
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 12,
     marginVertical: 30,
+    alignItems:'center',
+    flexDirection: 'row'
+  },
+  input: {
+    height: 50,
+    width:'100%',
+    paddingLeft: 10
   },
   equals: {
     alignSelf: 'center',
@@ -60,4 +67,7 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     paddingLeft: 10,
   },
+  errorText: {
+    color:'red'
+  }
 });

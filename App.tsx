@@ -1,8 +1,7 @@
-import React, {useState, useEffect, FC} from 'react';
-import {View, Text, TextInput, Alert, ScrollView} from 'react-native';
+import React, {useState, useEffect, useCallback} from 'react';
+import {View, Text, TextInput, Alert, ScrollView, Image} from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
-import SwapFrom from './images/SwapFrom.svg';
-import IconComponent from "./src/IconComponent"
+import IconComponent from './src/IconComponent';
 import {getExchangeRates} from './api';
 import SplashScreenComponent from './src/SplashScreenComponent';
 import {styles} from './src/styles';
@@ -29,35 +28,14 @@ const App = () => {
     rate: 1.1661482,
     symbol: '€',
   });
-  const [amountFrom, setAmountFrom] = useState<string>('');
-  const [amountTo, setAmountTo] = useState<string>('');
+  const [amountFrom, setAmountFrom] = useState<string>('0');
+  const [amountTo, setAmountTo] = useState<string>('0');
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // const fetchData = async () => {
-    //   try {
-    //     const data = await getExchangeRates('aud');
-    //     const arrayOfCurrencies: Currency[] = Object.keys(data).map(key => ({
-    //       code: key,
-    //       name: data[key].name,
-    //       rate: data[key].rate,
-    //       symbol: data[key].symbol,
-    //     }));
-    //     setExchangeRates(arrayOfCurrencies);
-    //   } catch (error) {
-    //     if (error instanceof Error) {
-    //       setError(error); // `error` is of type `Error`
-    //     } else {
-    //       setError(new Error('An unknown error occurred')); // Default error message
-    //     }
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // };
-
     const fetchData = async () => {
       try {
         const dataPromise = getExchangeRates('gbp');
@@ -68,7 +46,9 @@ const App = () => {
         const data = await Promise.all([dataPromise, timeoutPromise]);
         const exchangeRatesData = data[0];
 
-        const arrayOfCurrencies: Currency[] = Object.keys(exchangeRatesData).map(key => {
+        const arrayOfCurrencies: Currency[] = Object.keys(
+          exchangeRatesData,
+        ).map(key => {
           return {code: key, ...exchangeRatesData[key]};
         });
         setExchangeRates(arrayOfCurrencies);
@@ -102,19 +82,25 @@ const App = () => {
     }
   };
 
-  const handleFromAmountChange = (amount: string) => {
-    if (!isNaN(Number(amount))) {
-      setAmountFrom(amount);
-      updateToAmount(amount, exchangeRate);
-    }
-  };
+  const handleFromAmountChange = useCallback(
+    (amount: string) => {
+      if (!isNaN(Number(amount))) {
+        setAmountFrom(amount);
+        updateToAmount(amount, exchangeRate);
+      }
+    },
+    [exchangeRate],
+  );
 
-  const handleToAmountChange = (amount: string) => {
-    if (!isNaN(Number(amount))) {
-      setAmountTo(amount);
-      updateFromAmount(amount, exchangeRate);
-    }
-  };
+  const handleToAmountChange = useCallback(
+    (amount: string) => {
+      if (!isNaN(Number(amount))) {
+        setAmountTo(amount);
+        updateFromAmount(amount, exchangeRate);
+      }
+    },
+    [exchangeRate],
+  );
 
   const updateToAmount = (amount: string, rate: number | null) => {
     if (rate !== null) {
@@ -139,30 +125,40 @@ const App = () => {
     );
   };
 
-  const handleFromCurrencyChange = (item: Currency) => {
-    if (item.code === toValue.code) {
-      Alert.alert(
-        'Invalid Selection',
-        'You cannot select the same currency for both.',
-      );
-    } else {
-      setFromValue(item);
-    }
-  };
+  const handleFromCurrencyChange = useCallback(
+    (item: Currency) => {
+      if (item.code === toValue.code) {
+        Alert.alert(
+          'Invalid Selection',
+          'You cannot select the same currency for both.',
+        );
+      } else {
+        setFromValue(item);
+      }
+    },
+    [toValue.code],
+  );
 
-  const handleToCurrencyChange = (item: Currency) => {
-    if (item.code === fromValue.code) {
-      Alert.alert(
-        'Invalid Selection',
-        'You cannot select the same currency for both.',
-      );
-    } else {
-      setToValue(item);
-    }
-  };
+  const handleToCurrencyChange = useCallback(
+    (item: Currency) => {
+      if (item.code === fromValue.code) {
+        Alert.alert(
+          'Invalid Selection',
+          'You cannot select the same currency for both.',
+        );
+      } else {
+        setToValue(item);
+      }
+    },
+    [fromValue.code],
+  );
 
   if (loading) {
     return <SplashScreenComponent />;
+  }
+
+  if (error) {
+    return <Text style={styles.errorText}>Error: {error.message}</Text>;
   }
 
   return (
@@ -171,7 +167,7 @@ const App = () => {
       contentContainerStyle={{flexGrow: 1}}
       keyboardShouldPersistTaps="handled">
       <View style={styles.container}>
-        <SwapFrom width={80} height={80} />
+        <Image source={require('./images/SwapFrom.png')} />
         <Text style={styles.title}>Swap From</Text>
         <View style={styles.converterContainer}>
           {exchangeRates.length > 0 && (
@@ -198,13 +194,16 @@ const App = () => {
               }}
             />
           )}
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            value={amountFrom}
-            onChangeText={handleFromAmountChange}
-            placeholder="From Amount"
-          />
+          <View style={styles.inputContainer}>
+            <Text>{fromValue.symbol}</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="numeric"
+              value={amountFrom}
+              onChangeText={handleFromAmountChange}
+              placeholder="From Amount"
+            />
+          </View>
           <Text style={[styles.title, styles.equals]}>to</Text>
           <Text style={styles.conversionText}>
             {fromValue.code} {fromValue.symbol}1.00 = {toValue.code}{' '}
@@ -234,13 +233,16 @@ const App = () => {
               }}
             />
           )}
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            value={amountTo}
-            onChangeText={handleToAmountChange}
-            placeholder="To Amount"
-          />
+          <View style={styles.inputContainer}>
+            <Text>{toValue.symbol}</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="numeric"
+              value={amountTo}
+              onChangeText={handleToAmountChange}
+              placeholder="To Amount"
+            />
+          </View>
         </View>
       </View>
     </ScrollView>
