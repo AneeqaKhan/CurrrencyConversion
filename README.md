@@ -10,7 +10,7 @@ A React Native application for converting between different currencies. The app 
 - Manage currency exchange rates and keep the UI responsive.
 
 ## Screenshot
-
+![Simulator Screenshot - iPhone 15 - 2024-08-04 at 23 36 43](https://github.com/user-attachments/assets/0b4d22ab-7368-4e8d-80d2-d9e9d512104b)
 
 ## Getting Started
 
