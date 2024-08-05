@@ -4,12 +4,6 @@ import FastImage from 'react-native-fast-image';
 import SplashScreen from 'react-native-splash-screen';
 
 const SplashScreenComponent: React.FC = () => {
-  // useEffect(() => {
-  //   setTimeout(() => {
-  //     SplashScreen.hide();
-  //   }, 5000); // Duration of your splash screen animation (5 seconds)
-  // }, []);
-
   return (
     <View style={styles.container}>
       <FastImage

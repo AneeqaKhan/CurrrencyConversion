@@ -9,6 +9,9 @@ A React Native application for converting between different currencies. The app 
 - Handle user input and update the UI accordingly.
 - Manage currency exchange rates and keep the UI responsive.
 
+## Screenshot
+
+
 ## Getting Started
 
 Follow these instructions to set up and run the project locally.
