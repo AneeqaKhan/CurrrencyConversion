@@ -1,7 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import FastImage from 'react-native-fast-image';
-import SplashScreen from 'react-native-splash-screen';
 
 const SplashScreenComponent: React.FC = () => {
   return (

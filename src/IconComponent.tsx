@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
-import { currencyIcons } from './CurrencyIcons'; // Adjust the path as needed
-import GBPIcon from '../images/GBP.svg'; // Adjust the path as needed
+import { currencyIcons } from './CurrencyIcons'; 
+import GBPIcon from '../images/GBP.svg'; 
 
 interface IconComponentProps {
   code: string;

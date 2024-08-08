@@ -13,12 +13,10 @@ import ZARIcon from '../images/ZAR.svg';
 import { FC } from 'react';
 import { SvgProps } from 'react-native-svg';
 
-// Define the CurrencyIcons type with an index signature
 export type CurrencyIcons = {
   [key: string]: FC<SvgProps>;
 };
 
-// Create the currencyIcons object with explicit type annotation
 export const currencyIcons: CurrencyIcons = {
   AED: AEDIcon,
   AUD: AUDIcon,
