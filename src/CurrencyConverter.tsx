@@ -1,6 +1,7 @@
 import React, {useState, useEffect, useCallback} from 'react';
-import {View, Text, TextInput, Alert, ScrollView, Image} from 'react-native';
+import {View, Text, TextInput, Alert, Image} from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import IconComponent from './IconComponent';
 import {getExchangeRates} from '../api';
 import {styles} from './styles';
@@ -32,6 +33,27 @@ const CurrencyConverter: React.FC = () => {
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates>([]);
 
+  // Load data from AsyncStorage when the component mounts
+  useEffect(() => {
+    const loadStoredData = async () => {
+      try {
+        const storedFromValue = await AsyncStorage.getItem('@fromValue');
+        const storedToValue = await AsyncStorage.getItem('@toValue');
+        const storedAmountFrom = await AsyncStorage.getItem('@amountFrom');
+        const storedAmountTo = await AsyncStorage.getItem('@amountTo');
+
+        if (storedFromValue) setFromValue(JSON.parse(storedFromValue));
+        if (storedToValue) setToValue(JSON.parse(storedToValue));
+        if (storedAmountFrom) setAmountFrom(storedAmountFrom);
+        if (storedAmountTo) setAmountTo(storedAmountTo);
+      } catch (error) {
+        console.error('Error loading stored data:', error);
+      }
+    };
+
+    loadStoredData();
+  }, []);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -56,11 +78,32 @@ const CurrencyConverter: React.FC = () => {
     }
   }, [fromValue, toValue]);
 
+  // Save data to AsyncStorage when values change
+  useEffect(() => {
+    const storeData = async () => {
+      try {
+        await AsyncStorage.setItem('@fromValue', JSON.stringify(fromValue));
+        await AsyncStorage.setItem('@toValue', JSON.stringify(toValue));
+        await AsyncStorage.setItem('@amountFrom', amountFrom);
+        await AsyncStorage.setItem('@amountTo', amountTo);
+      } catch (error) {
+        console.error('Error saving data:', error);
+      }
+    };
+
+    storeData();
+  }, [fromValue, toValue, amountFrom, amountTo]);
+
   const fetchExchangeRate = async (from: string, to: string) => {
     try {
       const data = await getExchangeRates(from);
-      setExchangeRate(data[to].rate);
-      updateToAmount(amountFrom, data[to].rate);
+      const rate = data[to].rate;
+      setExchangeRate(rate);
+  
+      setAmountFrom((prevAmountFrom) => {
+        updateToAmount(prevAmountFrom, rate);
+        return prevAmountFrom;
+      });
     } catch (error) {
       console.error('Error fetching exchange rate:', error);
     }
